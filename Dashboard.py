@@ -7,122 +7,101 @@ import pandas as pd
 import re
 import streamlit as st
 
-# --------- AU and Landmark Dictionaries for Meaningful Annotation ----------
-# 68-point Dlib face landmark indices (full for x and y coordinates)
+# -------------- Mapping dictionaries (no change) --------------
 def _landmark_regions():
     mapping = {}
-    # Jawline
     for i in range(0, 17):
-        mapping[f'x{i}'] = 'Jawline'
-        mapping[f'y{i}'] = 'Jawline'
-    # Eyebrows
+        mapping[f'x{i}'] = 'Jawline'; mapping[f'y{i}'] = 'Jawline'
     for i in range(17, 22):
-        mapping[f'x{i}'] = 'Right eyebrow'
-        mapping[f'y{i}'] = 'Right eyebrow'
+        mapping[f'x{i}'] = 'Right eyebrow'; mapping[f'y{i}'] = 'Right eyebrow'
     for i in range(22, 27):
-        mapping[f'x{i}'] = 'Left eyebrow'
-        mapping[f'y{i}'] = 'Left eyebrow'
-    # Nose
+        mapping[f'x{i}'] = 'Left eyebrow'; mapping[f'y{i}'] = 'Left eyebrow'
     for i in range(27, 36):
-        mapping[f'x{i}'] = 'Nose bridge/tip'
-        mapping[f'y{i}'] = 'Nose bridge/tip'
-    # Eyes
+        mapping[f'x{i}'] = 'Nose bridge/tip'; mapping[f'y{i}'] = 'Nose bridge/tip'
     for i in range(36, 42):
-        mapping[f'x{i}'] = 'Right eye'
-        mapping[f'y{i}'] = 'Right eye'
+        mapping[f'x{i}'] = 'Right eye'; mapping[f'y{i}'] = 'Right eye'
     for i in range(42, 48):
-        mapping[f'x{i}'] = 'Left eye'
-        mapping[f'y{i}'] = 'Left eye'
-    # Mouth/Chin
+        mapping[f'x{i}'] = 'Left eye'; mapping[f'y{i}'] = 'Left eye'
     for i in range(48, 60):
-        mapping[f'x{i}'] = 'Outer lip'
-        mapping[f'y{i}'] = 'Outer lip'
+        mapping[f'x{i}'] = 'Outer lip'; mapping[f'y{i}'] = 'Outer lip'
     for i in range(60, 68):
-        mapping[f'x{i}'] = 'Inner lip'
-        mapping[f'y{i}'] = 'Inner lip'
+        mapping[f'x{i}'] = 'Inner lip'; mapping[f'y{i}'] = 'Inner lip'
     return mapping
 
 LANDMARK_REGION_MAP = _landmark_regions()
 
 AU_MEANING_MAP = {
-    'AU01': ('Inner brow raiser', 'Surprise, attentiveness'),
-    'AU02': ('Outer brow raiser', 'Attentiveness, surprise'),
-    'AU04': ('Brow lowerer', 'Frown, sadness, concern'),
-    'AU05': ('Upper lid raiser', 'Surprise, fear'),
-    'AU06': ('Cheek raiser', 'Genuine smile, happiness'),
-    'AU07': ('Lid tightener', 'Anger, tension'),
-    'AU09': ('Nose wrinkler', 'Disgust'),
-    'AU10': ('Upper lip raiser', 'Disgust, contempt'),
-    'AU12': ('Lip corner puller', 'Smile, happiness'),
-    'AU15': ('Lip corner depressor', 'Sadness, concern'),
-    'AU17': ('Chin raiser', 'Doubt, tension'),
-    'AU20': ('Lip stretcher', 'Fear, anxiety'),
-    'AU23': ('Lip tightener', 'Anger, tension'),
-    'AU26': ('Jaw drop', 'Surprise, low energy'),
-    'AU28': ('Lip suck', 'Uncertainty, discomfort'),
-    'AU45': ('Blink', 'Fatigue, boredom, anxiety'),
+    'AU01': ('Inner brow raiser', 'Terkejut, perhatian'),
+    'AU02': ('Outer brow raiser', 'Perhatian, terkejut'),
+    'AU04': ('Brow lowerer', 'Cemberut, sedih, khawatir'),
+    'AU05': ('Upper lid raiser', 'Terkejut, takut'),
+    'AU06': ('Cheek raiser', 'Senyum tulus, bahagia'),
+    'AU07': ('Lid tightener', 'Marah, tegang'),
+    'AU09': ('Nose wrinkler', 'Jijik'),
+    'AU10': ('Upper lip raiser', 'Jijik, meremehkan'),
+    'AU12': ('Lip corner puller', 'Senyum, bahagia'),
+    'AU15': ('Lip corner depressor', 'Sedih, khawatir'),
+    'AU17': ('Chin raiser', 'Ragu, tegang'),
+    'AU20': ('Lip stretcher', 'Takut, cemas'),
+    'AU23': ('Lip tightener', 'Marah, tegang'),
+    'AU26': ('Jaw drop', 'Terkejut, energi rendah'),
+    'AU28': ('Lip suck', 'Tidak nyaman'),
+    'AU45': ('Blink', 'Lelah, bosan, cemas'),
     # Add more if you use them
 }
 
-# --- Custom engineered/clinical features (YOUR NOVEL FEATURES) ---
 CUSTOM_CLINICAL_MAP = {
-    'blink_rate': ("Blink rate", "Fatigue, boredom, anxiety, disengagement (high blink), engagement (low blink)"),
-    'smile_strength': ("Smile strength", "Positive affect, social engagement, anhedonia if reduced"),
-    'frown_intensity': ("Frown intensity", "Negative affect, distress, sadness"),
-    'lip_tightness': ("Lip tightness", "Tension, anger, suppression of affect"),
-    'eye_contact': ("Eye contact avoidance", "Social withdrawal, avoidance, disengagement"),
-    'head_smoothness': ("Head movement smoothness", "Psychomotor retardation, psychomotor slowing (depression)"),
-    'facial_asymmetry': ("Facial asymmetry", "Neurological or psychomotor abnormality, emotional suppression"),
-    'emotional_volatility': ("Emotional volatility (AU fluctuation)", "Mood lability, emotional instability, affective reactivity"),
+    'blink_rate': ("Frekuensi kedipan", "Kelelahan, bosan, kecemasan (banyak kedipan), perhatian (sedikit kedipan)"),
+    'smile_strength': ("Kekuatan senyum", "Afirmasi positif, keterlibatan sosial, anhedonia jika menurun"),
+    'frown_intensity': ("Intensitas cemberut", "Afirmasi negatif, distress, kesedihan"),
+    'lip_tightness': ("Ketegangan bibir", "Tegang, marah, menahan emosi"),
+    'eye_contact': ("Hindari kontak mata", "Menarik diri secara sosial, menghindar, tidak terlibat"),
+    'head_smoothness': ("Kelancaran gerakan kepala", "Retardasi psikomotor, perlambatan psikomotor (depresi)"),
+    'facial_asymmetry': ("Asimetri wajah", "Kelainan neurologis/psikomotor, penekanan emosi"),
+    'emotional_volatility': ("Fluktuasi emosional", "Labilitas mood, ketidakstabilan emosi"),
 }
-
 
 def feature_region_and_meaning(feat):
     base_feat = feat.replace('_c','').replace('_r','').replace('_l','')
-    # 1. Check for custom/engineered features
     if base_feat in CUSTOM_CLINICAL_MAP:
         return CUSTOM_CLINICAL_MAP[base_feat]
-    # 2. Landmark
     if base_feat.startswith('x') or base_feat.startswith('y'):
         region = LANDMARK_REGION_MAP.get(base_feat, 'Unknown region')
         meaning = (
-            'Head movement, gaze, expression'
+            'Gerak kepala, tatapan, ekspresi'
             if region in ['Nose bridge/tip', 'Jawline'] else
-            'Eye movement, blink, gaze'
+            'Gerakan mata, kedipan, tatapan'
             if 'eye' in region else
-            'Lip/mouth movement'
+            'Gerak bibir/mulut'
             if 'lip' in region else
             'Unknown'
         )
         return region, meaning
-    # 3. AU
     m = re.match(r'(AU\d+)', base_feat)
     if m:
         au = m.group(1)
         label, psych = AU_MEANING_MAP.get(au, ('Unknown AU', 'Unknown meaning'))
         return label, psych
-    # 4. Unknown
     return 'Unknown', 'Unknown'
 
-
-# -------------- Streamlit UI --------------
+# -------------- Streamlit UI with Tabs --------------
 
 st.set_page_config(
     page_title="Depression Severity LOSO Dashboard",
     layout="wide",
 )
+
 st.title("Depression Severity Prediction – LOSO Dashboard")
 
-uploaded_file = st.file_uploader(
-    "Upload the LOSO results Excel (block style, 1 column):",
-    type=["xlsx", "xls"]
-)
+FILE_PATH = "/Users/stefanusbenhard/Downloads/dashboard.xlsx"  # Pastikan file ini ada di repo/dir yang sama!
 
 @st.cache_data
-def parse_block_excel(uploaded_file):
-    if uploaded_file is None:
+def parse_block_excel_file(filepath):
+    try:
+        df_txt = pd.read_excel(filepath, header=None)
+    except Exception as e:
+        st.error(f"Error loading file: {e}")
         return pd.DataFrame([])
-    df_txt = pd.read_excel(uploaded_file, header=None)
     lines = df_txt[0].astype(str).tolist()
     results = []
     i = 0
@@ -133,7 +112,6 @@ def parse_block_excel(uploaded_file):
             subj_id = int(m.group(1))
             selected = []
             true = pred = mae = mse = rmse = None
-            # Selected features next
             if i+1 < len(lines) and 'Selected features:' in lines[i+1]:
                 feat_str = lines[i+1].split(':',1)[1].strip()
                 try:
@@ -173,149 +151,145 @@ def parse_block_excel(uploaded_file):
         i += 1
     return pd.DataFrame(results)
 
-# --- LOAD & PARSE ---
-if uploaded_file:
-    df = parse_block_excel(uploaded_file)
-    if df.empty:
-        st.error("No LOSO blocks found. Check your Excel format.")
-else:
-    df = pd.DataFrame([])
+df = parse_block_excel_file(FILE_PATH)
+if df.empty:
+    st.error("No LOSO blocks found. Check your Excel format.")
 
-# --- DASHBOARD ---
 if not df.empty:
-    st.success(f"Parsed {len(df)} LOSO folds.")
-    col1, col2 = st.columns([2, 3])
-    with col1:
-        st.subheader("Overall Statistics")
-        st.metric("Mean MAE", f"{df['MAE'].mean():.2f}")
-        st.metric("Median MAE", f"{df['MAE'].median():.2f}")
-        st.metric("Best (lowest) MAE", f"{df['MAE'].min():.2f}")
-        st.metric("Worst (highest) MAE", f"{df['MAE'].max():.2f}")
-        st.metric("Mean RMSE", f"{df['RMSE'].mean():.2f}")
-        st.metric("Mean True PHQ", f"{df['True'].mean():.2f}")
-        st.metric("Mean Predicted PHQ", f"{df['Pred'].mean():.2f}")
+    tab1, tab2, tab3 = st.tabs([
+        "📝 Beranda & Glosarium", 
+        "📈 Statistik Dataset", 
+        "👤 Analisis Subjek"
+    ])
 
+    # Tab 1: Beranda & Glosarium
+    with tab1:
+        st.header("Tentang Sistem & Glosarium")
+        st.markdown("""
+        Dashboard ini membantu psikolog memahami hasil prediksi tingkat keparahan depresi menggunakan ciri-ciri wajah.
+        
+        **Bagaimana cara membacanya?**
+        - Sistem memanfaatkan data video wawancara lalu mengekstrak ekspresi wajah dan fitur gerak.
+        - Setiap fitur dan hasil prediksi dapat dijelaskan makna psikologisnya.
+        - Tujuan: membantu klinisi memahami kapan prediksi dapat dipercaya dan fitur apa saja yang relevan.
+        """)
+        st.subheader("Glosarium Istilah Penting")
+        glos = {
+            "Action Unit (AU)": "Kode aktivitas otot wajah (misal: AU06 = senyum, AU04 = cemberut).",
+            "Landmark": "Titik pengenalan bentuk wajah (misal: ujung alis, sudut bibir).",
+            "MAE": "Rata-rata selisih absolut prediksi dengan nilai sesungguhnya.",
+            "PHQ": "Skor depresi hasil kuesioner PHQ.",
+            "Fitur Terpilih": "Ciri wajah paling berpengaruh dalam prediksi untuk tiap subjek.",
+        }
+        for k, v in glos.items():
+            st.markdown(f"**{k}:** {v}")
+        st.info("Hubungi peneliti jika menemukan istilah yang belum dipahami.")
+
+    # Tab 2: Statistik Dataset (Global)
+    with tab2:
+        st.header("Statistik Dataset & Fitur Global")
+        st.metric("Jumlah Subjek", df['Subject'].nunique())
+        st.metric("Rata-rata PHQ", f"{df['True'].mean():.2f}")
+        st.metric("Rata-rata MAE", f"{df['MAE'].mean():.2f}")
+        st.metric("Rata-rata Prediksi PHQ", f"{df['Pred'].mean():.2f}")
+        st.metric("Rata-rata RMSE", f"{df['RMSE'].mean():.2f}")
         st.markdown("---")
-        st.subheader("Top (Lowest MAE)")
-        st.dataframe(df.nsmallest(189, 'MAE')[['Subject','True','Pred','MAE']].reset_index(drop=True))
-        st.subheader("Top (Highest MAE)")
-        st.dataframe(df.nlargest(189, 'MAE')[['Subject','True','Pred','MAE']].reset_index(drop=True))
 
-    with col2:
-        st.subheader("Distribution Plots")
+        st.subheader("Distribusi MAE dan Prediksi PHQ")
         import matplotlib.pyplot as plt
         import seaborn as sns
         fig, ax = plt.subplots(1,2, figsize=(10,4))
         sns.histplot(df['MAE'], kde=True, ax=ax[0])
-        ax[0].set_title('MAE Distribution')
+        ax[0].set_title('Distribusi MAE')
         ax[0].set_xlabel('MAE')
         sns.scatterplot(x=df['True'], y=df['Pred'], ax=ax[1])
         ax[1].plot([df['True'].min(), df['True'].max()], [df['True'].min(), df['True'].max()], '--', color='gray')
-        ax[1].set_xlabel('True PHQ')
-        ax[1].set_ylabel('Predicted PHQ')
-        ax[1].set_title('True vs Predicted PHQ')
+        ax[1].set_xlabel('PHQ Aktual')
+        ax[1].set_ylabel('PHQ Prediksi')
+        ax[1].set_title('PHQ Aktual vs Prediksi')
         st.pyplot(fig)
 
         st.markdown("---")
-        st.subheader("Full Data Table (searchable)")
-        st.dataframe(df.sort_values('Subject').reset_index(drop=True))
-
-        # --- GLOBAL TOP 10 FEATURES ---
-        st.subheader("Top Globally Most Selected Features")
-
-        # Flatten all selected features
+        st.subheader("Top 10 Fitur yang Paling Sering Terpilih Secara Global")
         all_feats = []
         for feats in df['Selected_Features']:
             if isinstance(feats, str):
                 feats = eval(feats)
             all_feats.extend(feats)
-
         from collections import Counter
-        top_counts = Counter(all_feats).most_common()
-
-        # Prepare pretty table with region/meaning
+        top_counts = Counter(all_feats).most_common(10)
         top_tbl = []
         for idx, (feat, count) in enumerate(top_counts, 1):
             region, meaning = feature_region_and_meaning(feat)
             top_tbl.append({
                 "Rank": idx,
-                "Feature": feat,
-                "Times Selected": count,
-                "Region/Logic": region,
-                "Psychological Meaning": meaning
+                "Fitur": feat,
+                "Jumlah Terpilih": count,
+                "Wilayah/Logika": region,
+                "Makna Psikologis": meaning
             })
-
         st.dataframe(pd.DataFrame(top_tbl))
 
+        st.markdown("---")
+        st.subheader("Tabel Data Lengkap")
+        st.dataframe(df.sort_values('Subject').reset_index(drop=True))
 
-    st.markdown("---")
-    # --- DETAILED INSIGHT DROPDOWN ---
-    st.subheader(":mag_right: Detailed View (by Subject)")
-    subj_list = df['Subject'].sort_values().unique().tolist()
-    subj_selected = st.selectbox("Select Subject ID", subj_list)
-    row = df[df['Subject']==subj_selected].iloc[0]
-    st.write(f"### Subject: {subj_selected}")
-    st.write(f"**True PHQ:** {row['True']},  **Predicted PHQ:** {row['Pred']},  **MAE:** {row['MAE']:.2f}")
-    # ---- Feature annotation ----
-        # ---- Feature annotation (original order, interactive) ----
-    st.write("**Selected Features (with Region & Psychological Meaning):**")
-    features = row['Selected_Features']
-    if isinstance(features, str):
-        features = eval(features)
+    # Tab 3: Analisis Subjek (Detail)
+    with tab3:
+        st.header("Analisis Detail per Subjek")
+        subj_list = df['Subject'].sort_values().unique().tolist()
+        subj_selected = st.selectbox("Pilih Subject ID", subj_list)
+        row = df[df['Subject']==subj_selected].iloc[0]
+        st.write(f"### Subjek: {subj_selected}")
+        st.write(f"**PHQ Aktual:** {row['True']},  **PHQ Prediksi:** {row['Pred']},  **MAE:** {row['MAE']:.2f}")
 
-    # Count options
-    options = [5, 10, 15, 20, len(features)]
-    labels = [f"Top {n}" for n in options[:-1]] + ["All"]
-    default_idx = 0
-
-    n_display = st.radio(
-        "How many features to display?",
-        options=options, format_func=lambda x: labels[options.index(x)],
-        index=default_idx, horizontal=True,
-    )
-
-    show_feats = features[:n_display]
-    for idx, f in enumerate(show_feats, 1):
-        region, meaning = feature_region_and_meaning(f)
-        st.markdown(
-            f"**{idx}.** `{f}`  \n"
-            f"&emsp;• **Region/Logic:** {region}  \n"
-            f"&emsp;• **Psychological Meaning:** *{meaning}*"
+        st.write("**Fitur Terpilih (beserta Wilayah & Makna Psikologis):**")
+        features = row['Selected_Features']
+        if isinstance(features, str):
+            features = eval(features)
+        options = [5, 10, 15, 20, len(features)]
+        labels = [f"Top {n}" for n in options[:-1]] + ["Semua"]
+        default_idx = 0
+        n_display = st.radio(
+            "Berapa banyak fitur yang ingin ditampilkan?",
+            options=options, format_func=lambda x: labels[options.index(x)],
+            index=default_idx, horizontal=True,
         )
+        show_feats = features[:n_display]
+        for idx, f in enumerate(show_feats, 1):
+            region, meaning = feature_region_and_meaning(f)
+            st.markdown(
+                f"**{idx}.** `{f}`  \n"
+                f"&emsp;• **Wilayah/Logika:** {region}  \n"
+                f"&emsp;• **Makna Psikologis:** *{meaning}*"
+            )
+        if n_display < len(features):
+            st.caption(f"Menampilkan top {n_display} dari total {len(features)} fitur. Ubah opsi untuk lihat semua.")
+        if abs(row['True']-row['Pred'])>5:
+            st.warning(f"Error prediksi tinggi! (>|5|)")
 
-    if n_display < len(features):
-        st.caption(f"Showing top {n_display} of {len(features)} features. Use selector above to see more.")
-
-
-    # Quick Error Analysis
-    if abs(row['True']-row['Pred'])>5:
-        st.warning(f"High prediction error detected! (>|5|)")
-
-    # --- Expandable: Show full AU and Landmark cheat sheet for clinicians
-    with st.expander("Legend: Action Units & Landmark Meanings"):
-        st.markdown("#### Common Action Units (FACS)")
-        au_tbl = pd.DataFrame([
-            {'AU': k, 'Region/Muscle': v[0], 'Psychological Meaning': v[1]}
-            for k,v in AU_MEANING_MAP.items()
-        ])
-        st.dataframe(au_tbl)
-        st.markdown("#### Facial Landmarks (Dlib 68)")
-        st.write("""
-- **x0–x16 / y0–y16:** Jawline
-- **x17–x21 / y17–y21:** Right eyebrow
-- **x22–x26 / y22–y26:** Left eyebrow
-- **x27–x35 / y27–y35:** Nose bridge & tip
-- **x36–x41 / y36–y41:** Right eye
-- **x42–x47 / y42–y47:** Left eye
-- **x48–x59 / y48–y59:** Outer lip
-- **x60–x67 / y60–y67:** Inner lip
-        """)
-        st.markdown("#### Custom Clinical Features (Engineered)")
-        custom_tbl = pd.DataFrame([
-            {'Feature': k, 'Region/Logic': v[0], 'Psychological Meaning': v[1]}
-            for k,v in CUSTOM_CLINICAL_MAP.items()
-        ])
-        st.dataframe(custom_tbl)
-
-else:
-    st.info("Upload a file to begin analysis.")
+        # Legend
+        with st.expander("Legenda Action Unit & Landmark"):
+            st.markdown("#### Action Unit (FACS) Umum")
+            au_tbl = pd.DataFrame([
+                {'AU': k, 'Wilayah/Otot': v[0], 'Makna Psikologis': v[1]}
+                for k,v in AU_MEANING_MAP.items()
+            ])
+            st.dataframe(au_tbl)
+            st.markdown("#### Landmark Wajah (Dlib 68)")
+            st.write("""
+- **x0–x16 / y0–y16:** Jawline (rahang)
+- **x17–x21 / y17–y21:** Right eyebrow (alis kanan)
+- **x22–x26 / y22–y26:** Left eyebrow (alis kiri)
+- **x27–x35 / y27–y35:** Nose bridge & tip (hidung)
+- **x36–x41 / y36–y41:** Right eye (mata kanan)
+- **x42–x47 / y42–y47:** Left eye (mata kiri)
+- **x48–x59 / y48–y59:** Outer lip (bibir luar)
+- **x60–x67 / y60–y67:** Inner lip (bibir dalam)
+            """)
+            st.markdown("#### Fitur Klinis Kustom")
+            custom_tbl = pd.DataFrame([
+                {'Fitur': k, 'Wilayah/Logika': v[0], 'Makna Psikologis': v[1]}
+                for k,v in CUSTOM_CLINICAL_MAP.items()
+            ])
+            st.dataframe(custom_tbl)
