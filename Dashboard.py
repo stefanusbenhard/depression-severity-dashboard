@@ -93,7 +93,7 @@ st.set_page_config(
 
 st.title("Depression Severity Prediction – LOSO Dashboard")
 
-FILE_PATH = "/Users/stefanusbenhard/Downloads/dashboard.xlsx"  # Pastikan file ini ada di repo/dir yang sama!
+FILE_PATH = "dashboard.xlsx"  # Pastikan file ini ada di repo/dir yang sama!
 
 @st.cache_data
 def parse_block_excel_file(filepath):
