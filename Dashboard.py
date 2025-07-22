@@ -93,7 +93,7 @@ st.set_page_config(
 
 st.title("Dashboard Sistem Prediksi Tingkat Keparahan Depresi")
 st.subheader("dengan Patient Health Questionnaire 8 (PHQ-8)")
-FILE_PATH = "/Users/stefanusbenhard/Downloads/dashboard.xlsx"  # Pastikan file ini ada di repo/dir yang sama!
+FILE_PATH = "dashboard.xlsx"  # Pastikan file ini ada di repo/dir yang sama!
 
 @st.cache_data
 def parse_block_excel_file(filepath):
@@ -301,10 +301,10 @@ with tab2:
     st.markdown("#### Ilustrasi Titik Landmark & Action Unit pada Wajah")
     colA, colB = st.columns(2)
     with colA:
-        st.image("/Users/stefanusbenhard/Downloads/landmarks.png", caption="Nomor Titik Landmark Wajah (Dlib 68-point)", use_column_width=True)
+        st.image("landmarks.png", caption="Nomor Titik Landmark Wajah (Dlib 68-point)", use_column_width=True)
         st.caption("Setiap titik bernomor mewakili bagian wajah untuk analisis ekspresi & gerak. Contoh: x36 = sudut luar mata kanan.")
     with colB:
-        st.image("/Users/stefanusbenhard/Downloads/action_units.png", caption="Lokasi Action Unit (AU) FACS pada Wajah", use_column_width=True)
+        st.image("action_units.png", caption="Lokasi Action Unit (AU) FACS pada Wajah", use_column_width=True)
         st.caption("Action Unit (AU) menunjukkan aktivitas otot tertentu. Contoh: AU06 = Senyum, AU04 = Cemberut.")
     st.info(
         "Keterangan: Titik landmark dan Action Units ini digunakan sistem untuk mendeteksi pola ekspresi yang relevan dalam prediksi skor PHQ-8 secara otomatis."
@@ -398,10 +398,10 @@ with tab2:
         st.markdown("#### Ilustrasi Titik Landmark & Action Unit pada Wajah")
         colA, colB = st.columns(2)
         with colA:
-            st.image("/Users/stefanusbenhard/Downloads/landmarks.png", caption="Nomor Titik Landmark Wajah (Dlib 68-point)", use_column_width=True)
+            st.image("landmarks.png", caption="Nomor Titik Landmark Wajah (Dlib 68-point)", use_column_width=True)
             st.caption("Setiap titik bernomor mewakili bagian wajah untuk analisis ekspresi & gerak. Contoh: x36 = sudut luar mata kanan.")
         with colB:
-            st.image("/Users/stefanusbenhard/Downloads/action_units.png", caption="Lokasi Action Unit (AU) FACS pada Wajah", use_column_width=True)
+            st.image("action_units.png", caption="Lokasi Action Unit (AU) FACS pada Wajah", use_column_width=True)
             st.caption("Action Unit (AU) menunjukkan aktivitas otot tertentu. Contoh: AU06 = Senyum, AU04 = Cemberut.")
         st.info("Gambar di atas membantu Anda memahami posisi setiap fitur wajah yang digunakan dalam analisis otomatis oleh sistem.")
 
